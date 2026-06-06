@@ -1,0 +1,3 @@
+[submodule "third_party/DanmakuAndroid"]
+	path = third_party/DanmakuAndroid
+	url = https://github.com/busydoggo/DanmakuAndroid.git

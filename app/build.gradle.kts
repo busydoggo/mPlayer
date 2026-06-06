@@ -125,6 +125,12 @@ android {
   androidResources {
     generateLocaleConfig = true
   }
+
+  sourceSets {
+    getByName("main") {
+      java.directories.add("../third_party/DanmakuAndroid/DanmakuFlameMaster/src/main/java")
+    }
+  }
 }
 
 androidComponents {

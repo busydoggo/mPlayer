@@ -44,6 +44,7 @@ import app.marlboroadvance.mpvex.preferences.BrowserPreferences
 import app.marlboroadvance.mpvex.preferences.PlayerPreferences
 import app.marlboroadvance.mpvex.preferences.SubtitlesPreferences
 import app.marlboroadvance.mpvex.ui.player.controls.PlayerControls
+import app.marlboroadvance.mpvex.ui.player.danmaku.DanmakuOverlay
 import app.marlboroadvance.mpvex.ui.theme.MpvexTheme
 import app.marlboroadvance.mpvex.utils.history.RecentlyPlayedOps
 import app.marlboroadvance.mpvex.utils.media.HttpUtils
@@ -156,6 +157,15 @@ class PlayerActivity :
    * The MPV player view.
    */
   val player by lazy { binding.player }
+
+  private val danmakuOverlay by lazy {
+    DanmakuOverlay(
+      danmakuView = binding.danmakuView,
+      currentPositionMs = { currentPlaybackPositionMs() },
+      playbackSpeed = { currentPlaybackSpeed() },
+      isPaused = { viewModel.paused ?: (MPVLib.getPropertyBoolean("pause") == true) },
+    )
+  }
 
   // ==================== State Management ====================
 
@@ -401,7 +411,10 @@ class PlayerActivity :
     // Set HTTP headers (including referer) BEFORE playing the file
     setHttpHeadersFromExtras(intent.extras)
 
-    getPlayableUri(intent)?.let(player::playFile)
+    getPlayableUri(intent)?.let { playableUri ->
+      danmakuOverlay.loadForMedia(extractUriFromIntent(intent), playableUri)
+      player.playFile(playableUri)
+    }
 
     // Only set orientation immediately if NOT in Video mode
     // For Video mode, wait for video-params/aspect to become available
@@ -590,6 +603,7 @@ class PlayerActivity :
       }
 
       cleanupMPV()
+      danmakuOverlay.release()
       cleanupAudio()
       cleanupReceivers()
       releaseMediaSession()
@@ -683,6 +697,7 @@ class PlayerActivity :
       if (!isFinishing) {
         saveVideoPlaybackState(fileName)
       }
+      danmakuOverlay.setPaused(true)
     }.onFailure { e ->
       Log.e(TAG, "Error during onPause", e)
     }
@@ -1045,7 +1060,14 @@ class PlayerActivity :
   override fun onResume() {
     super.onResume()
     updateVolume()
+    danmakuOverlay.setPaused(viewModel.paused ?: true)
   }
+
+  private fun currentPlaybackPositionMs(): Long =
+    ((MPVLib.getPropertyDouble("time-pos") ?: 0.0) * 1000).toLong()
+
+  private fun currentPlaybackSpeed(): Double =
+    MPVLib.getPropertyDouble("speed") ?: 1.0
 
   /**
    * Updates the volume level to match the system volume.
@@ -1455,6 +1477,7 @@ class PlayerActivity :
     when (property) {
       "pause" -> {
         handlePauseStateChange(value)
+        danmakuOverlay.setPaused(value)
         // Ensure isReady is set when playback starts
         if (!value && !isReady) {
           isReady = true
@@ -1572,6 +1595,9 @@ class PlayerActivity :
   ) {
     // Handle Double properties
     when (property) {
+      "time-pos" -> {
+        danmakuOverlay.onPlaybackPositionChanged((value * 1000).toLong())
+      }
       "video-params/aspect" -> {
         // Safety check: don't access MPV during cleanup
         if (!mpvInitialized || player.isExiting || isFinishing) return
@@ -2330,6 +2356,7 @@ class PlayerActivity :
 
     // Load the new file
     getPlayableUri(intent)?.let { uri ->
+      danmakuOverlay.loadForMedia(extractUriFromIntent(intent), uri)
       // Avoid blocking UI thread while mpv opens network streams (e.g., HLS).
       lifecycleScope.launch(Dispatchers.Default) {
         MPVLib.command("loadfile", uri)
@@ -2991,6 +3018,7 @@ class PlayerActivity :
 
     val uri = playlist[index]
     val playableUri = uri.openContentFd(this) ?: uri.toString()
+    danmakuOverlay.loadForMedia(uri, playableUri)
 
     // Update playlist index
     playlistIndex = index

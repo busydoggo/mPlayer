@@ -38,7 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.marlboroadvance.mpvex.R
 import app.marlboroadvance.mpvex.presentation.Screen
 import app.marlboroadvance.mpvex.ui.browser.folderlist.FolderListScreen
 import app.marlboroadvance.mpvex.ui.browser.networkstreaming.NetworkStreamingScreen
@@ -121,6 +123,10 @@ object MainScreen : Screen {
 
     val context = LocalContext.current
     val density = LocalDensity.current
+    val homeLabel = stringResource(R.string.home)
+    val recentsLabel = stringResource(R.string.pref_advanced_enable_recently_played_title)
+    val playlistsLabel = stringResource(R.string.playlists)
+    val networkLabel = stringResource(R.string.network)
 
     // Shared state (across the app)
     val isInSelectionMode = remember { mutableStateOf(isInSelectionModeShared) }
@@ -187,26 +193,26 @@ object MainScreen : Screen {
               )
           ) {
             NavigationBarItem(
-              icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-              label = { Text("Home") },
+              icon = { Icon(Icons.Filled.Home, contentDescription = homeLabel) },
+              label = { Text(homeLabel) },
               selected = selectedTab == 0,
               onClick = { selectedTab = 0 }
             )
             NavigationBarItem(
-              icon = { Icon(Icons.Filled.History, contentDescription = "Recents") },
-              label = { Text("Recents") },
+              icon = { Icon(Icons.Filled.History, contentDescription = recentsLabel) },
+              label = { Text(recentsLabel) },
               selected = selectedTab == 1,
               onClick = { selectedTab = 1 }
             )
             NavigationBarItem(
-              icon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = "Playlists") },
-              label = { Text("Playlists") },
+              icon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = playlistsLabel) },
+              label = { Text(playlistsLabel) },
               selected = selectedTab == 2,
               onClick = { selectedTab = 2 }
             )
             NavigationBarItem(
-              icon = { Icon(Icons.Filled.Language, contentDescription = "Network") },
-              label = { Text("Network") },
+              icon = { Icon(Icons.Filled.Language, contentDescription = networkLabel) },
+              label = { Text(networkLabel) },
               selected = selectedTab == 3,
               onClick = { selectedTab = 3 }
             )
